@@ -32,9 +32,40 @@ MATLAB-based autonomous coverage system for the TurtleBot4 (TB4) platform. The r
 ## Setup
 
 ### 1. TB4 Relay Initialisation
-Before running the MATLAB script, start the relay nodes on the TurtleBot4. These relays convert the TB4's native topics into the standardised names expected by the code. The relay scripts are included in this repository (see the `relays` folder). Run them on the TB4 using the provided launch files or scripts, for example:
+
+The repository includes four Python relay scripts that must run on the TurtleBot4 to bridge topics.  
+Copy them to the TB4 and run each one with `python3`.
+
+#### Step-by-step from your local machine
+
+Navigate to the folder containing the relay files (e.g., `relays/` in the repo), then transfer them to the TB4 and start the relays:
 
 ```bash
-# On the TurtleBot4
-cd ~/tb4-relays
-ros2 launch tb4_relays all_relays.launch.py
+# On your local machine, inside the repository folder that contains:
+#   cmd_vel_relay.py
+#   hazard_bridge.py
+#   hazard_relay_node.py
+#   odom_relay.py
+
+# 1. Copy all relay scripts to the TB4 (adjust IP and path if needed)
+scp *.py ubuntu@<tb4-ip>:/home/ubuntu/relays/
+
+# 2. SSH into the TB4 and start the relays
+ssh ubuntu@<tb4-ip>
+
+# On the TB4:
+cd /home/ubuntu/relays
+
+# It’s easiest to run each node in a separate terminal or in a tmux session.
+# Example using tmux (all four nodes in a single session):
+tmux new-session -d -s relays
+tmux send-keys -t relays:0 "python3 odom_relay.py" C-m
+tmux split-window -t relays:0 -v
+tmux send-keys -t relays:0.1 "python3 hazard_bridge.py" C-m
+tmux split-window -t relays:0.1 -h
+tmux send-keys -t relays:0.2 "python3 hazard_relay_node.py" C-m
+tmux split-window -t relays:0.0 -h
+tmux send-keys -t relays:0.3 "python3 cmd_vel_relay.py" C-m
+
+# Detach from tmux with Ctrl+B, D.
+# To reattach later: tmux attach -t relays
